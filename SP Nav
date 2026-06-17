@@ -1,0 +1,1932 @@
+// HTML
+
+<nav class="bu-navigator" ng-class="{'mobile-filters': mobileFilters}">
+  <div class="actions">
+    <button class="btn" ng-disabled="loading || !(selectedCategory || selectedItem)" ng-click="back()"> <i
+        class="fa fa-arrow-left" aria-hidden="true"></i><span>Back</span> </button>
+    <button class="btn" ng-click="reset()"><i class="fa fa-refresh" aria-hidden="true"></i><span>Start Over</span>
+    </button>
+    <button class="btn" ng-click="copyLinkToClipboard()"><i class="glyphicon glyphicon-link"
+        aria-hidden="true"></i><span>Copy
+        Link</span>
+    </button>
+    <a class="btn" href="?id=ppe_requests"><i class="fa fa-th-list" aria-hidden="true"></i> My requests</a>
+     
+    <button class="btn categories-toggle" ng-click="toggleCategories()" ng-class="{'active': mobileCategories}"
+      style=""> <span>Categories</span><i class="fa fa-chevron-down"></i></button>
+  </div>
+  <input class="hidden" id="cat-item-link" />
+  <div class="text-lg dropdowns" ng-show="totalItems.length > 0">
+    <i class="fa fa-th" ng-click="changeView('grid')" aria-label="${Card View}" ng-class="{'active' : view == 'grid'}"
+      uib-tooltip="${Grid View}" tooltip-placement="top" tooltip-enable="!isTouchDevice()" tooltip-append-to-body="true"
+      aria-label="${Grid View}" tabindex="0"></i>
+    <span class="m-l-sm m-r-sm "> | </span>
+    <i class="fa fa-list-ul" ng-click="changeView('list')" aria-label="${List View}"
+      ng-class="{'active' : view == 'list'}" uib-tooltip="${List View}" tooltip-placement="top"
+      tooltip-enable="!isTouchDevice()" tooltip-append-to-body="true" aria-label="${List View}" tabindex="0"></i>
+  </div>
+  <div class="breadcrumbs">
+    <span class="crumb " ng-if="selectedCategory">{{selectedCategory.title}} </span><span class="crumb"
+      ng-if="selectedSubCategory">{{selectedSubCategory.title}} </span>
+  </div>
+</nav>
+<section class="bu-stack"
+  ng-class="{'has-mobilecategories':c.isChildMobile ,'has-nosubcategories':c.noSub,'has-subcategories':c.subcategories.length > 0 ,'has-childcategories':c.childcategories.length > 0,'mobile-categories':c.isMobile}">
+  <div class="stack-wrapper no-border">
+    <aside class="categories">
+      <ul class="aside-list">
+        <li ng-if="data.categoriesList.length > 0" ng-repeat="category in data.categoriesList track by $index"
+          ng-click="selectCategory(category)" ng-class="{'cat-active': selectedCategory.sys_id == category.sys_id}"
+          role="button">
+          <img ng-if="category.homepage_image" src="{{category.homepage_image}}.iix" />
+          <img ng-if="!category.homepage_image" src="646731c4dbce7b00d51c9ac5db96192a.iix" />
+          <span class="category-label">{{category.title}}</span>
+          <span ng-if="category.totalCount > 0" class="badge pull-right pointer">{{category.totalCount}}</span>
+          <br />
+          <div class="cat-desc"><small>{{category.description}}</small></div>
+        </li>
+      </ul>
+    </aside>
+    <aside class="subcategories">
+      <ul class="aside-list">
+        <li ng-if="c.subcategories.length > 0" ng-repeat="subcategory in c.subcategories track by $index"
+          ng-click="selectSubCategory(subcategory)"
+          ng-class="{'cat-active': selectedSubCategory.sys_id == subcategory.sys_id}" role="button">
+          <img ng-if="category.homepage_image" src="{{category.homepage_image}}.iix" />
+          <img ng-if="!category.homepage_image" src="646731c4dbce7b00d51c9ac5db96192a.iix" />
+          <span class="category-label">{{subcategory.title}}</span>
+          <span ng-if="subcategory.totalCount > 0" class="badge pull-right pointer">{{subcategory.totalCount}}</span>
+          <div class="cat-desc"><small>{{subcategory.description}}</small></div>
+        </li>
+      </ul>
+    </aside>
+    <aside class="subchild-categories">
+      <ul class="aside-list">
+        <li ng-if="c.childcategories.length > 0" ng-repeat="child in c.childcategories track by $index"
+          ng-click="selectChildCategory(child)" ng-class="{'cat-active': selectedChildCategory.sys_id == child.sys_id}"
+          role="button">
+          <img ng-if="child.homepage_image" src="{{child.homepage_image}}.iix" />
+          <img ng-if="!child.homepage_image" src="646731c4dbce7b00d51c9ac5db96192a.iix" />
+          <span class="category-label">{{child.title}}</span>
+          <div class="cat-desc"><small>{{child.description}}</small></div>
+        </li>
+      </ul>
+    </aside>
+    <aside class="results">
+      <div class="items-and-tags" ng-class="{'grid':view == 'grid','list': view == 'list'}">
+        <div ng-hide="showItem" class="items">
+          <div ng-if="data.showTitle" class="text-center col-md-12">
+            <h2 class="h4 text-center m-t-none break-word"><span>Popular Items</span></h2>
+          </div>
+          <ul class="citems" ng-class="{'loading': loading}">
+            <li ng-if="totalItems.length > 0"
+              ng-repeat="item in filterData = (totalItems) track by item.sys_id"
+              ng-click="selectItem(item)" ng-class="{'active': item.selected}" role="button">
+              <img ng-src="{{::item.picture}}.iix" ng-if="::item.picture" alt="{{::item.name}}"
+                class="m-r-sm m-b-sm item-image" />
+              <img ng-if="::!item.picture" src="3f1cf21ddbce3300d51c9ac5db9619aa.iix" alt=""
+                class="m-r-sm m-b-sm item-image" />
+              <div class="item-details">
+                <h3 class="item-label">{{::item.name}}</h3>
+                <div class="item-summary">{{::item.short_description}}</div>
+              </div>
+            </li>
+            <!--  <li ng-if="totalItems.length == 0" >
+<div class="text-center"> 
+<img class="img-responsive" src="5d570b95dbe23700d51c9ac5db96193f.iix"/>
+</div>
+</li>-->
+          </ul>
+          <div class="clearfix"></div>
+          <!--div class="pull-right ps-page">
+            <uib-pagination class="pagination-sm pagination" total-items="filterData.length" ng-model="page"
+              ng-change="pageChanged()" previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page=9>
+            </uib-pagination>
+          </div-->
+        </div>
+        <div ng-show="showItem" class="show-article">
+          <div class="col-md-12">
+            <div ng-repeat="itemWidget in c.itemWidgets">
+              <sp-widget widget="itemWidget"></sp-widget>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+
+
+
+/CSS
+
+.grid .items ul:not(.aside-list) li .item-image {
+  margin-bottom: 2rem;
+  margin-top: 1rem;
+}
+
+.grid .items ul:not(.aside-list) li .item-image {
+  align-items: flex-start;
+  display: flex;
+  justify-content: flex-start;
+  max-height: 75px;
+  position: relative;
+  align-items: center;
+  flex: none;
+  justify-content: center;
+}
+.items li .item-image {
+  margin-right: 1em;
+}
+.items li .item-image {
+  align-items: flex-start;
+  display: flex;
+  justify-content: flex-start;
+  max-height: 75px;
+  position: relative;
+  align-items: center;
+  flex: none;
+  justify-content: center;
+  margin-top:15px;
+}
+.aside-list img{
+  height: 30px;
+  width: auto;
+  margin: 0 6%;
+}
+.show-article{padding:0% 3%;}
+.back-btn{margin:1% 0px;}
+
+.dropdown-toggle {
+  cursor: pointer;
+  color: initial;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.dropdown-menu {
+  right: 0;
+  left: inherit;
+  min-width: auto;
+  margin-top: .5rem;
+  padding: .5rem;
+  border: none;
+  border-radius: 5px;
+  color: initial;
+  font-size: 1.5rem;
+  white-space: nowrap;
+  text-transform: capitalize;
+  box-shadow: 0px 6px 18px 0px rgba(0, 0, 0, .2);
+  z-index: 1;
+}
+
+.dropdown-menu li {
+  cursor: pointer;
+  padding: .5rem 1rem .5rem 2rem;
+  position: relative;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.value {
+  font-weight: 600;
+  margin: 0 .5rem;
+}
+
+.dropdown-menu li span {
+  align-items: center;
+  display: inline-flex;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.dropdown-menu li span.active {
+  font-weight: 600;
+}
+
+.dropdown-menu li span.active i {
+  color: #00aae3;
+  font-size: 1.25rem;
+  font-weight: inherit;
+  left: 5px;
+  position: absolute;
+}
+
+.rotate-up {
+  -moz-transform: rotate(0deg);
+  -o-transform: rotate(0deg);
+  -ms-transform: rotate(0deg);
+  -webkit-transform: rotate(0deg);
+  transform: rotate(0deg);
+  -webkit-transition: transform .1s;
+  -o-transition: transform .1s;
+  transition: transform .1s;
+}
+
+.rotate-down {
+  -moz-transform: rotate(180deg);
+  -o-transform: rotate(180deg);
+  -ms-transform: rotate(180deg);
+  -webkit-transform: rotate(180deg);
+  transform: rotate(180deg);
+  -webkit-transition: transform .1s;
+  -o-transition: transform .1s;
+  transition: transform .1s;
+}
+
+.dropdown-toggle {
+  margin-bottom: 0;
+}
+
+{
+  box-shadow: 0 20px 40px rgba(56, 96, 81, .1);
+  box-shadow: 0 25px 40px rgba(56, 96, 81, .4);
+}
+@media  screen and (max-width: 479px) {
+
+  {
+    margin-left: -15px;
+    margin-right: -15px;
+  }
+}
+
+.bu-stack {
+  background-color: #fff;
+  overflow: hidden;
+  position: relative;
+}
+
+.bu-navigator {
+  align-items: center;
+  background-color: #fff;
+  box-shadow: 0 20px 40px rgba(56, 96, 81, .1);
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+@media  screen and (max-width: 767px) {
+
+  .bu-navigator {
+    flex-direction: column;
+  }
+}
+@media  screen and (min-width: 768px) {
+
+  .bu-navigator {
+    padding: 1rem;
+  }
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+}
+@media  screen and (max-width: 767px) {
+
+  .actions {
+    width: 100%;
+  }
+}
+
+.actions .btn {
+  background-color: transparent;
+  border-radius: 0;
+}
+@media  screen and (max-width: 479px) {
+
+  .actions .btn:not(.categories-toggle) span {
+    display: none;
+  }
+}
+
+.actions .btn i {
+  color: #00aae3;
+  font-size: 1.5em;
+  transform-origin: 50%;
+  transition: transform .1s ease-out;
+}
+@media  screen and (min-width: 480px) {
+
+  .actions .btn i {
+    margin-right: .333em;
+  }
+}
+@media  screen and (min-width: 768px) {
+
+  .actions .categories-toggle, 
+  .actions .filters-toggle {
+    display: none;
+  }
+}
+
+.actions .categories-toggle.active, 
+.actions .filters-toggle.active {
+  background-color: #f2f2f2;
+}
+
+.actions .categories-toggle i, 
+.actions .filters-toggle i {
+  margin-right: 0;
+}
+@media  screen and (max-width: 767px) {
+
+  .actions .categories-toggle {
+    margin-left: auto;
+  }
+}
+
+.actions .categories-toggle.active i {
+  transform: rotate(-90deg);
+}
+
+.actions .categories-toggle i {
+  margin-left: .333em;
+}
+
+.search {
+  align-items: center;
+  background-color: #f2f2f2;
+  display: flex;
+}
+@media  screen and (max-width: 767px) {
+
+  .search {
+    border-top: 1px solid #d9d9d9;
+    display: none;
+    width: 100%;
+  }
+
+  .mobile-filters .search {
+    display: flex;
+  }
+}
+
+.search input[type="text"] {
+  background-color: transparent;
+  border: none;
+  color: #333333;
+  height: $searchbar-height;
+  flex-grow: 1;
+  font-weight: 100;
+  padding: 1rem;
+}
+
+.search input[type="text"]::-moz-placeholder {
+  color: #333333;
+  opacity: 1;
+}
+
+.search input[type="text"]:-ms-input-placeholder {
+  color: #333333;
+}
+
+.search input[type="text"]::-webkit-input-placeholder {
+  color: #333333;
+}
+@media  screen and (max-width: 991px) {
+
+  .search input[type="text"] {
+    font-size: 1.5rem;
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 991px) {
+
+  .search input[type="text"] {
+    width: 250px;
+  }
+}
+@media  screen and (min-width: 992px) {
+
+  .search input[type="text"] {
+    font-size: 1.2rem;
+    width: 270px;
+  }
+}
+
+.search input[type="text"]::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.search input[type="text"]::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.search input[type="text"]::-webkit-search-decoration, 
+.search input[type="text"]::-webkit-search-cancel-button, 
+.search input[type="text"]::-webkit-search-results-button, 
+.search input[type="text"]::-webkit-search-results-decoration {
+  display: none;
+}
+
+.search .btn {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #66B7CD;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1.75rem;
+  padding: 1rem;
+}
+
+.search i {
+  font-size: 2rem;
+  color: #00aae3;
+}
+
+.dropdowns {
+  align-items: center;
+  display: flex;
+  position: relative;
+  z-index: 2;
+}
+@media  screen and (max-width: 767px) {
+
+  .dropdowns {
+    align-items: flex-start;
+    display: none;
+    flex-direction: column;
+    padding: 1rem;
+    width: 100%;
+  }
+
+  .mobile-filters .dropdowns {
+    display: flex;
+  }
+
+  .dropdowns .dropdown-toggle {
+    align-items: center;
+    display: flex;
+    padding-top: .25rem;
+    padding-bottom: .25rem;
+  }
+
+  .dropdowns .dropdown-menu {
+    left: 0;
+    right: auto;
+  }
+
+  .dropdowns label {
+    margin: 0;
+  }
+}
+@media  screen and (min-width: 480px) and (max-width: 767px) {
+
+  .dropdowns {
+    flex-direction: row;
+  }
+
+  .dropdowns  > * {
+    margin-right: 1rem;
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 991px) {
+
+  .dropdowns  > * {
+    margin-left: .5rem;
+    margin-right: .5rem;
+  }
+}
+@media  screen and (min-width: 992px) {
+
+  .dropdowns  > * {
+    margin-left: .75rem;
+    margin-right: .75rem;
+  }
+}
+
+.dropdowns  > [disabled] {
+  opacity: .333;
+  pointer-events: none;
+}
+@media  screen and (max-width: 991px) {
+
+  .dropdowns .layout-options {
+    display: none;
+  }
+}
+
+.dropdowns .layout-options i {
+  color: #00aae3;
+  font-size: 2rem;
+}
+
+.dropdowns .layout-options .fa-chevron-down {
+  color: #94949e;
+  font-size: 1.2rem;
+  margin-left: .5rem;
+  transform-origin: 50% 50%;
+  transition: transform .1s ease-out;
+}
+
+.dropdowns .layout-options .dropdown-toggle {
+  align-items: center;
+  display: flex;
+}
+
+.dropdowns .layout-options .dropdown-menu {
+  width: 8rem;
+}
+
+.dropdowns .layout-options.open .fa-chevron-down {
+  transform: rotate(180deg);
+}
+
+.dropdowns .layout-options.open .dropdown-menu {
+  align-items: center;
+  display: flex;
+}
+
+.dropdowns .layout-options.open .dropdown-menu li {
+  align-items: center;
+  display: flex;
+  padding: .5rem;
+}
+
+.dropdowns .layout-options.open .dropdown-menu li i {
+  font-size: 2.5rem;
+}
+
+.dropdowns .layout-options.open .dropdown-menu li i.muted {
+  color: #94949e;
+}
+
+.mobile-tags {
+  border-top: 1px solid #d9d9d9;
+  display: none;
+  padding: 1rem;
+  width: 100%;
+}
+@media  screen and (min-width: 480px) {
+
+  .mobile-tags {
+    display: none !important;
+  }
+}
+
+.mobile-filters .mobile-tags {
+  display: flex;
+}
+
+.breadcrumbs {
+  align-items: center;
+  background-color: #f2f2f2;
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+}
+@media  screen and (min-width: 768px) {
+
+  .breadcrumbs {
+    display: none;
+  }
+}
+
+.breadcrumbs .crumb {
+  align-items: center;
+  display: inline-flex;
+  flex: 1;
+  font-size: 1.2rem;
+  padding: .5rem 1rem;
+  position: relative;
+}
+
+.breadcrumbs .crumb:nth-child(1) {
+  padding-right: .75rem;
+  z-index: 1;
+}
+
+.breadcrumbs .crumb:nth-child(1)::after {
+  border-top: 1px solid #d9d9d9;
+  border-right: 1px solid #d9d9d9;
+  content: "";
+  display: flex;
+  height: 1.8rem;
+  left: calc(100% - .9rem);
+  position: absolute;
+  top: calc(50% - .9rem);
+  transform: rotate(45deg);
+  transform-origin: 50%;
+  width: 1.8rem;
+  z-index: -1;
+}
+
+.breadcrumbs .crumb.has-color:nth-child(1)::after {
+  background-color: inherit;
+  border-top-color: #fff;
+  border-right-color: #fff;
+}
+
+.breadcrumbs .crumb.has-subcategories:nth-child(1) {
+  flex: none;
+}
+
+.breadcrumbs .crumb:nth-child(2) {
+  padding-left: 2.25rem;
+  z-index: 0;
+}
+
+.breadcrumbs .crumb.has-color {
+  color: #fff;
+}
+
+.stack-wrapper {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+aside {
+  box-shadow: 0 20px 40px rgba(56, 96, 81, .1);
+  display: flex;
+  flex: none;
+  height: auto;
+  min-height: 400px;
+  transition: transform .5s ease-out;
+}
+@media  screen and (max-width: 767px) {
+
+  aside {
+    width: 100%;
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 1199px) {
+
+  aside {
+    width: 33.333%;
+  }
+}
+@media  screen and (min-width: 1200px) {
+
+  aside {
+    width: 25%;
+  }
+}
+
+.aside-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  width: 100%;
+}
+
+.aside-list li {
+  align-items: center;
+  border-bottom: 1px solid #d9d9d9;
+  border-bottom: 1px solid #dbdfdb;
+  display: block;
+  margin: 0;
+  min-height: 80px;
+  padding: 2rem 1rem;
+  position: relative;
+  width: 100%;
+  font-size:1.5rem;
+}
+@media  screen and (max-width: 767px) {
+
+  .aside-list li {
+    min-height: 50px;
+  }
+}
+
+.loading .aside-list li {
+  pointer-events: none;
+}
+
+.aside-list li .background {
+  background-color: #66B7CD;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: opacity .25s ease-out;
+}
+
+.aside-list li .background + div {
+  position: relative;
+}
+
+.categories, 
+.subcategories,.subchild-categories {
+  background-color: #f2f2f2;
+  background-color: #F6F7F6;
+}
+
+.categories li.active, 
+.categories li.active i, 
+.categories li:hover, 
+.categories li:hover i, 
+.subcategories li.active, 
+.subcategories li.active i, 
+.subcategories li:hover, 
+.subcategories li:hover i,
+.subchild-categories li.active, 
+.subchild-categories li.active i, 
+.subchild-categories li:hover, 
+.subchild-categories li:hover i {
+  color: #00aae3 !important;
+}
+
+.categories li.active .background, 
+.categories li:hover .background, 
+.subcategories li.active .background, 
+.subcategories li:hover .background,
+.subchild-categories li.active .background, 
+.subchild-categories li:hover .background {
+  opacity: 1;
+}
+
+.categories li .category-label, 
+.subcategories li .category-label,
+.subchild-categories li .category-label {
+  position: relative;
+}
+@media  screen and (max-width: 767px) {
+
+  .categories {
+    margin-right: 5%;
+    transform: translateX(-50%);
+    width: 95%;
+  }
+
+  .mobile-categories .categories {
+    transform: translateX(0);
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 1199px) {
+
+  .has-subcategories .categories, 
+  .has-selected-item .categories {
+    pointer-events: none;
+  }
+}
+@media  screen and (max-width: 767px) {
+
+  .subcategories {
+    margin-right: 10%;
+    transform: translateX(-150%);
+    width: 90%;
+  }
+  .subchild-categories {
+    margin-right: 10%;
+    transform: translateX(-200%);
+  }
+  .has-childcategories .results {
+    transform: translateX(-200%);
+  }
+  .has-childcategories .subchild-categories {
+    transform: translateX(-200%);
+  }
+  .mobile-categories .subcategories {
+    transform: translateX(0);
+  }
+  .mobile-categories .subchild-categories {
+    transform: translateX(0);
+  }
+  .mobile-categories.has-subcategories .subcategories {
+    transform: translateX(-100%);
+  }
+  .mobile-categories.has-subcategories .subchild-categories {
+    transform: translateX(-100%);
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 1199px) {
+
+  .subcategories {
+    width: 31.666%;
+  }
+  .subchild-categories {
+    width: 31.666%;
+  }
+  .has-subcategories .subcategories {
+    transform: translateX(-100%);
+  }
+  .has-subcategories .subchild-categories {
+    transform: translateX(-100%);
+  }
+  .has-subcategories.has-childcategories .subchild-categories {
+    transform: translateX(-195%);
+  }
+  .has-selected-item .subcategories {
+    pointer-events: none;
+  }
+  .has-selected-item .subchild-categories {
+    pointer-events: none;
+  }
+}
+@media  screen and (min-width: 1200px) {
+
+  .has-subcategories.has-selected-item .subcategories {
+    transform: translateX(-100%);
+  }
+  .has-subcategories.has-selected-item .subchild-categories {
+    transform: translateX(-100%);
+  }
+}
+
+.results {
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  position: relative;
+}
+@media  screen and (max-width: 767px) {
+
+  .results {
+    transform: translateX(-310%);
+  }
+  .has-mobilecategories .results {
+    transform: translateX(-310%);
+  }
+  .mobile-categories .results {
+    transform: translateX(-205%);
+  }
+  .has-nosubcategories.mobile-categories .results {
+    transform: translateX(-310%);
+  }
+  .has-selected-item .results {
+    transform: translateX(-250%);
+  }
+}
+@media  screen and (min-width: 768px) {
+
+  .has-selected-item .results .items-and-tags {
+    margin-top: 0;
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 1199px) {
+
+  .results {
+    transform: translateX(-97.5%);
+    width: 66.666%;
+  }
+
+  .has-selected-item .results {
+    transform: translateX(-92.65%);
+  }
+
+  .has-selected-item .results .items-and-tags {
+    width: 45%;
+  }
+
+  .has-selected-item .results .pagination {
+    width: 45%;
+  }
+}
+@media  screen and (min-width: 992px) {
+
+  .results .grid.has-tags .items ul:not(.aside-list) li {
+    margin: 0;
+    margin-bottom: 1.5rem;
+    width: 100%;
+  }
+}
+@media  screen and (min-width: 1200px) {
+
+  .results {
+    transform: translateX(-66.666%);
+    width: 75%;
+  }
+
+  .has-subcategories .results {
+    transform: translateX(-33.333%);
+  }
+  .has-subcategories.has-childcategories .results {
+    transform: translateX(0);
+  }
+  .has-subcategories .results .items-and-tags, 
+  .has-subcategories .results .pagination {
+    width: 66.666%;
+  }
+
+  .has-selected-item .results {
+    transform: translateX(-33.333%);
+  }
+
+  .has-selected-item .results .items-and-tags {
+    width: 33.333%;
+  }
+
+  .has-selected-item .results .pagination {
+    width: 33.333%;
+  }
+
+  .has-subcategories.has-selected-item .results {
+    transform: translateX(-33.333%);
+  }
+}
+
+.has-selected-item .results .items-and-tags .tags {
+  display: none;
+}
+
+.has-selected-item .results .pagination .page-links {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.results .empty {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+.results .empty .empty-message {
+  font-weight: 400;
+  font-weight: 400;
+}
+@media  screen and (max-width: 991px) {
+
+  .results .empty .empty-message {
+    font-size: 1.2rem;
+  }
+
+  .has-selected-item .results .empty .empty-message {
+    font-size: 1.5rem;
+  }
+}
+@media  screen and (min-width: 992px) {
+
+  .results .empty .empty-message {
+    font-size: 1.5rem;
+  }
+
+  .has-selected-item .results .empty .empty-message {
+    font-size: 1.2rem;
+  }
+}
+
+.results .empty .btn {
+  background-color: #e6e6e6;
+  margin-top: 1rem;
+}
+
+.items-and-tags {
+  display: flex;
+  margin-top: 1.5rem;
+  min-height: 400px;
+  position: relative;
+  width: 100%;
+}
+
+
+
+.loading .items-and-tags .tags, 
+.loading .items-and-tags .items {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tags {
+  border-right: 1px solid #e6e6e6;
+  flex: 1;
+  padding: 1.5rem;
+  transition: opacity .25s ease-out;
+}
+@media  screen and (max-width: 479px) {
+
+  .tags {
+    display: none;
+  }
+}
+.tags.loading {
+  opacity: 0;
+}
+
+.items {
+  align-items: flex-start;
+  display: flex;
+  flex: 2;
+  flex-direction: column;
+  padding: 1.5rem;
+  transition: opacity .25s ease-out;
+}
+
+.has-selected-item .items {
+  padding: 0;
+}
+
+.items .items-title {
+  margin: 0 0 2rem;
+}
+@media  screen and (max-width: 767px) {
+
+  .items .items-title {
+    font-size: 1.5rem;
+  }
+}
+@media  screen and (min-width: 768px) {
+
+  .items .items-title {
+    font-size: 2rem;
+  }
+}
+
+.has-selected-item .items .items-title {
+  background-color: #5EA087;
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  margin: 0;
+  padding: 1rem;
+  width: 100%;
+}
+
+.items ul {
+  width: 100%;
+}
+
+.items ul:not(.aside-list) {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+}
+@media  screen and (min-width: 992px) {
+
+  .grid .items ul:not(.aside-list) {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+.items ul:not(.aside-list) li {
+  align-items: center;
+  display: flex;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+@media  screen and (min-width: 768px) and (max-width: 991px) {
+
+  .items ul:not(.aside-list) li .item-image {
+    align-items: flex-start;
+    display: flex;
+    justify-content: flex-start;
+    max-height: 60px;
+    position: relative;
+    align-items: center;
+    flex: none;
+    justify-content: center;
+  }
+
+}
+@media  screen and (min-width: 992px) {
+
+  .grid .items ul:not(.aside-list) li {
+    border: 1px solid #e6e6e6;
+    border-radius: 5px;
+    border-radius: 5px;
+    flex-direction: column;
+    margin: 1rem;
+    padding: 1.5rem;
+    width: calc(50% - 2rem);
+  }
+
+}
+@media  screen and (min-width: 1200px) {
+
+  .grid .items ul:not(.aside-list) li {
+    width: calc(33.333% - 2rem);
+  }
+
+  .has-subcategories .grid .items ul:not(.aside-list) li {
+    width: calc(50% - 2rem);
+  }
+}
+.items.loading {
+  opacity: 0;
+}
+
+.item-details {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+@media  screen and (min-width: 992px) {
+
+  .grid .items ul:not(.aside-list) .item-details {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.item-details .item-type {
+  align-items: center;
+  color: #94949e;
+  display: inline-flex;
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-bottom: .25em;
+  text-transform: uppercase;
+}
+
+.aside-list .item-details .item-type {
+  display: none;
+}
+
+.item-details .item-label {
+  margin: 0 0 .333em;
+  width: 100%;
+  font-size: 1.5rem;
+}
+@media  screen and (max-width: 767px) {
+
+  .item-details .item-label {
+    font-size: 1.5rem;
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 991px) {
+
+  .item-details .item-label {
+    font-size: 1.5rem;
+  }
+}
+@media  screen and (min-width: 992px) {
+
+  .item-details .item-label {
+    font-size: 1.5rem;
+  }
+}
+
+.item-details .item-label .has-tags {
+  font-size: 1.5rem;
+}
+@media  screen and (min-width: 992px) {
+
+  .grid .items ul:not(.aside-list) .item-details .item-label {
+    font-size: 1.5rem;
+  }
+}
+
+.aside-list .item-details .item-label {
+  font-size: 1.5rem;
+  font-weight: 400;
+  font-weight: 400;
+}
+
+.aside-list li.active .item-details .item-label {
+  font-weight: 600;
+  font-weight: 600;
+}
+
+.item-details .item-summary {
+  width: 100%;
+}
+@media  screen and (max-width: 767px) {
+
+  .item-details .item-summary {
+    font-size: 1.2rem;
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 991px) {
+
+  .item-details .item-summary {
+    font-size: 1.2rem;
+  }
+}
+@media  screen and (min-width: 992px) {
+
+  .item-details .item-summary {
+    font-size: 1.5rem;
+  }
+}
+
+.has-tags .item-details .item-summary {
+  font-size: 1.2rem;
+}
+
+.aside-list .item-details .item-summary {
+  display: none;
+}
+@media  screen and (min-width: 992px) {
+
+  .grid .item-details .item-summary {
+    font-size: 12px;
+  }
+}
+
+.pagination {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 1.5rem;
+}
+
+.pagination .btn {
+  background-color: transparent;
+}
+@media  screen and (max-width: 767px) {
+
+  .pagination .btn {
+    padding: .5rem;
+  }
+}
+
+.pagination .btn i {
+  color: #94949e;
+  font-size: 1.5em;
+}
+@media  screen and (max-width: 767px) {
+
+  .pagination .btn span {
+    display: none;
+  }
+}
+
+.preview {
+  background-color: #fff;
+  box-shadow: 0 20px 40px rgba(56, 96, 81, .1);
+  display: flex;
+  flex: none;
+  padding: 1.5rem;
+  position: relative;
+  transition: transform .5s ease-out;
+}
+@media  screen and (max-width: 767px) {
+
+  .preview {
+    transform: translateX(-200%);
+    width: 100%;
+  }
+
+  .has-selected-item .preview {
+    transform: translateX(-300%);
+  }
+}
+@media  screen and (min-width: 768px) {
+
+  .preview {
+    padding: 3rem;
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 1199px) {
+
+  .preview {
+    width: 66.666%;
+  }
+
+  .has-selected-item .preview {
+    transform: translateX(-147.5%);
+  }
+}
+@media  screen and (min-width: 1200px) {
+
+  .preview {
+    width: 50%;
+  }
+
+  .has-selected-item .preview {
+    transform: translateX(-150%);
+  }
+}
+
+.article, 
+.service {
+  width: 100%;
+}
+
+.service .header {
+  display: flex;
+  margin-top: 3rem;
+}
+@media  screen and (max-width: 767px) {
+
+  .service .header {
+    flex-direction: column;
+  }
+}
+
+.service .header .item-label {
+  margin: 0 0 1rem;
+}
+@media  screen and (max-width: 767px) {
+
+  .service .header .item-label {
+    font-size: 1.5rem;
+  }
+}
+
+.service .header .btn {
+  margin-top: 1rem;
+}
+
+.service .item-description {
+  border-top: 1px solid #e6e6e6;
+  margin-top: 3rem;
+  padding-top: 3rem;
+}
+
+.widget {
+  background-color: #fff;
+  box-shadow: 0 20px 40px rgba(56, 96, 81, .1);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  opacity: 0;
+  padding: 1.5rem;
+  pointer-events: none;
+  position: relative;
+  width: 100%;
+  transition: opacity .25s ease-out, transform .5s ease-out;
+}
+@media  screen and (max-width: 767px) {
+
+  .widget {
+    transform: translate(-400%, -100%);
+  }
+
+  .show-widget .widget {
+    transform: translate(-400%, 0);
+  }
+}
+@media  screen and (min-width: 768px) {
+
+  .widget {
+    padding: 3rem;
+  }
+}
+@media  screen and (min-width: 768px) and (max-width: 1199px) {
+
+  .widget {
+    transform: translate(-198.3333%, -100%);
+  }
+
+  .show-widget .widget {
+    transform: translate(-198.3333%, 0);
+  }
+}
+@media  screen and (min-width: 1200px) {
+
+  .widget {
+    transform: translate(-175%, -100%);
+  }
+
+  .show-widget .widget {
+    transform: translate(-175%, 0);
+  }
+}
+
+.show-widget .widget {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.widget #sc_cat_item .wrapper-md {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+ul{padding-left:10px;}
+.bu-navigator i.fa.active {
+  color: #00aae3;
+}
+.show-article{max-width:100%;float:left;width:100%;}
+.crumb{color:#ffffff;}
+.breadcrumbs{background:#00aae3;}
+.cat-active .category-label{
+  color: #00aae3;
+  font-weight: bold;
+  font-size: 18px;
+}
+span.badge.pull-right.pointer {
+  background: #00aae3;
+  position: absolute;
+  right: 30px;
+  margin:5px 0px;
+}
+ul.pagination li {
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline !important;
+  border: none !important;
+}
+ul.pagination {
+  width: 100% !important;
+  display: block !important;
+}
+.items ul:not(.aside-list) li{    
+  min-height:170px;
+}
+
+
+
+
+
+// Server Script
+
+(function () {
+
+	var catalogIDs = $sp.getCatalogs().value + "";
+	var catalogs = catalogIDs.split(",");
+	data.category = $sp.getParameter("sys_id");
+	data.isPPE = $sp.getParameter("ppe"); //Get PPE related queries
+	var nestedLayout = true;
+	var checkCanView = true;
+	data.categoriesList = queryCategory(catalogs, data.category);
+	data.items = getItems();
+	data.popular = false;
+
+	// check if there are url parms
+	data.urlCategory = $sp.getParameter('cat') || '';
+	data.urlSubcategory = $sp.getParameter('subcat') || '';
+	data.urlCatItem = $sp.getParameter('cat_item') || '';
+
+
+	if (data.popular)
+		data.showTitle = true;
+
+	function queryCategory(catalogs, catID) {
+		var categoriesGr = new GlideRecord('sc_category');
+		categoriesGr.addQuery("sc_catalog", "IN", catalogs);
+		categoriesGr.addActiveQuery();
+		categoriesGr.orderBy('order');
+		categoriesGr.orderBy('title');
+		if (nestedLayout && !data.category)
+			categoriesGr.addNullQuery("parent");
+		
+		//Show PPE Categories only on Service Catalog when the Order Personal Protective Equipment is selected on R2O page.
+		if(data.isPPE =='true')
+			categoriesGr.addEncodedQuery("sc_catalog=e0d08b13c3330100c8b837659bba8fb4^titleLIKEppe");
+
+		if (data.category)
+			categoriesGr.addQuery("parent", catID);
+		categoriesGr.query();
+		return fetchCategories(categoriesGr, data.categoriesList);
+	}
+
+	function fetchCategories(categoriesGr) {
+		var categories = [];
+		while (categoriesGr.next()) {
+			var categoryJS = new sn_sc.CatCategory(categoriesGr.getUniqueValue() + '');
+			if (!categoryJS.canView())
+				continue;
+
+			var categoryDetails = getCategoryDetails(categoryJS, 0);
+			categoryDetails.sys_id = categoriesGr.getUniqueValue();
+			categories.push(categoryDetails);
+		}
+		return categories;
+	}
+
+	function getCategoryDetails(categoryJS, level) {
+		var categoryDetails = {};
+		var showChildren = false;
+		if (!categoryJS) {
+			return categoryDetails;
+		}
+		categoryDetails.title = categoryJS.getTitle();
+		categoryDetails.level = level;
+		categoryDetails.description = categoryJS.getDescription();
+		categoryDetails.full_description = categoryJS.getFullDescription();
+		categoryDetails.icon = categoryJS.getIconSRC();
+		categoryDetails.header_icon = categoryJS.getHeaderIconSRC();
+		categoryDetails.homepage_image = categoryJS.getHomepageImageSRC();
+		categoryDetails.sys_id = categoryJS.getID();
+		categoryDetails.showChildren = true;
+		categoryDetails.items = getItems(categoryDetails.sys_id);
+		categoryDetails.catalog = { "sys_id": categoryJS.getCatalog(), "title": new sn_sc.Catalog(categoryJS.getCatalog()).getTitle() };
+		if (data.largeDataSet != 'true') {
+			if (checkCanView)
+				categoryDetails.count = categoryDetails.totalCount = categoryJS.getViewableItemsCount(true);
+			else
+				categoryDetails.count = categoryDetails.totalCount = categoryJS.getItemsCount(true);
+		}
+		else {
+			categoryDetails.count = 1;
+		}
+
+		var subCategoryCounts = 0;
+		if (nestedLayout) {
+			var subcategories = categoryJS.getViewableSubCategories();
+
+			if (subcategories.length == 0) {
+				categoryDetails.subcategories = [];
+			}
+			else {
+				categoryDetails.subcategories = [];
+				subcategories.forEach(function (subCategory) {
+					var subCategoryJS = new sn_sc.CatCategory(subCategory.sys_id + '');
+					var category = getCategoryDetails(subCategoryJS, level + 1);
+					categoryDetails.totalCount = categoryDetails.totalCount + category.totalCount;
+					categoryDetails.subcategories.push(category);
+					categoryDetails.showChildren = categoryDetails.showChildren || category.showChildren;
+				});
+			}
+		}
+		else {
+			categoryDetails.totalCount = categoryDetails.count;
+		}
+		return categoryDetails;
+	}
+	/*
+	function getPopularItems() {
+		var catalog = $sp.getValue('sc_catalog');
+		var limit = 6;
+		var items = [];
+
+		var count = new GlideAggregate('sc_req_item');
+		count.addAggregate('COUNT', 'cat_item');
+		count.groupBy('cat_item');
+		count.addQuery('cat_item.sys_class_name', 'NOT IN', 'sc_cat_item_guide,sc_cat_item_wizard,sc_cat_item_content');
+		count.addQuery('cat_item.sc_catalogs', 'IN', catalog);
+		count.addEncodedQuery('cat_item.hide_sp=false^ORcat_item.hide_spISEMPTY');
+		count.orderByAggregate('COUNT', 'cat_item');
+		count.query();
+		while (count.next() && items.length < limit) {
+			var catalogItemJS = new sn_sc.CatItem(count.cat_item.sys_id.getValue());
+			if (!catalogItemJS.canView() || !catalogItemJS.isVisibleServicePortal())
+				continue;
+			var item = {};
+			var catItemDetails = catalogItemJS.getItemSummary();
+
+			item.order = 0 - count.getAggregate('COUNT', 'cat_item');
+			item.name = catItemDetails.name;
+			item.short_description = catItemDetails.short_description;
+			item.picture = catItemDetails.picture;
+			item.price = catItemDetails.price;
+			item.sys_id = catItemDetails.sys_id;
+			item.hasPrice = item.price != 0;
+			item.page = 'sc_cat_item';
+			items.push(item);
+		}
+
+		if (options.include_record_producers == 'true' || options.include_record_producers == true) {
+			var producers = 0;
+			count = new GlideAggregate('sc_item_produced_record');
+			count.addQuery('producer.sc_catalogs', 'IN', catalog);
+			count.addEncodedQuery('producer.hide_sp=false^ORproducer.hide_spISEMPTY');
+			count.addAggregate('COUNT', 'producer');
+			count.groupBy('producer');
+			count.orderByAggregate('COUNT', 'producer');
+			count.query();
+			while (count.next() && producers < limit) {
+				var catalogItemsJS = new sn_sc.CatItem(count.getValue('producer'));
+				if (!catalogItemsJS.canView() || !catalogItemsJS.isVisibleServicePortal())
+					continue;
+				var catItemsDetails = catalogItemsJS.getItemSummary();
+				var pitem = {};
+
+				pitem.order = 0 - count.getAggregate('COUNT', 'producer');
+				pitem.name = catItemsDetails.name;
+				pitem.short_description = catItemsDetails.short_description;
+				pitem.picture = catItemsDetails.picture;
+				pitem.price = catItemsDetails.price;
+				pitem.hasPrice = pitem.price != 0;
+				pitem.sys_id = catItemsDetails.sys_id;
+				pitem.page = 'sc_cat_item';
+				items.push(pitem);
+				producers++;
+			}
+		}
+		return items;
+	}
+	*/
+	function getItems(catid) {
+		var catalog = $sp.getValue('sc_catalog');
+		var scRecord = new sn_sc.CatalogSearch().search(catalog, catid, '', false, true);
+		scRecord.addQuery('sys_class_name', 'NOT IN', 'sc_cat_item_wizard');
+		scRecord.addEncodedQuery('hide_sp=false^ORhide_spISEMPTY');
+		scRecord.orderBy('order');
+		scRecord.orderBy('name');
+		scRecord.query();
+
+		var items = data.items = [];
+		while (scRecord.next()) {
+			var catalogItemJS = new sn_sc.CatItem(scRecord.getUniqueValue());
+			if (!catalogItemJS.canView() || !catalogItemJS.isVisibleServicePortal())
+				continue;
+			var catItemDetails = catalogItemJS.getItemSummary();
+
+			var item = {};
+			item.name = catItemDetails.name;
+			item.short_description = catItemDetails.short_description;
+			item.picture = catItemDetails.picture;
+			item.price = catItemDetails.price;
+			item.sys_id = catItemDetails.sys_id;
+			item.hasPrice = catItemDetails.show_price;
+			item.page = 'bu_cat_item';
+			item.type = catItemDetails.type;
+			item.order = catItemDetails.order;
+			item.sys_class_name = catItemDetails.sys_class_name;
+			if (item.type == 'order_guide') {
+				item.page = 'sc_cat_item_guide';
+			} else if (item.sys_class_name == 'sc_cat_item_content') {
+				var contentItem = new GlideRecord('sc_cat_item_content');
+				contentItem.get(item.sys_id.toString());
+				item.content_type = contentItem.content_type.toString();
+				item.url = contentItem.url.toString();
+				if (contentItem.content_type == 'kb') {
+					item.kb_article = catItemDetails.kb_article.toString();
+					item.page = 'bu_kb_article';
+					item.sys_id = item.kb_article.toString();
+				} else if (contentItem.content_type == 'external') {
+					item.target = '_blank';
+				}
+				else if (contentItem.content_type == 'literal') {
+					item.content_type = 'literal'
+				}
+			}
+			items.push(item);
+		}
+		return items;
+	}
+	function getSingleCategoryDetails(catID) {
+		var categoriesList = [];
+		var categoriesGr = new GlideRecord('sc_category');
+		categoriesGr.addQuery("sc_catalog", data.catalog);
+		if (catID)
+			categoriesGr.addQuery("sys_id", catID);
+		if(data.isPPE =="true")
+			categoriesGr.addEncodedQuery("sc_catalog=e0d08b13c3330100c8b837659bba8fb4^titleLIKEppe");
+		categoriesGr.addActiveQuery();
+		categoriesGr.orderBy('order');
+		categoriesGr.orderBy('title');
+		categoriesGr.query();
+		while (categoriesGr.next()) {
+			var categoryJS = new sn_sc.CatCategory(categoriesGr.getUniqueValue() + '');
+			//if (!categoryJS.canView())
+			//continue;
+			var categoryDetails = {};
+			categoryDetails.title = categoryJS.getTitle();
+			categoryDetails.description = categoryJS.getDescription();
+			categoryDetails.full_description = categoryJS.getFullDescription();
+			categoryDetails.icon = categoryJS.getIconSRC();
+			categoryDetails.header_icon = categoryJS.getHeaderIconSRC();
+			categoryDetails.homepage_image = categoryJS.getHomepageImageSRC();
+			categoryDetails.sys_id = categoryJS.getID();
+			categoryDetails.subcategories = getCategoryDetails(categoryJS.getID());
+			categoryDetails.items = getItems(categoryJS.getID().toString());
+			categoriesList.push(categoryDetails);
+		}
+		return categoriesList;
+	}
+	//gs.addInfoMessage(JSON.stringify(data.categoriesList));
+})();
+
+
+
+
+
+// Clinet Script
+
+function($scope, $location, $timeout, $window, $document, $rootScope, spUtil, spAriaUtil) {
+	var c = this;
+	var ITEM_LIMIT = 9;
+	$scope.page = 1;
+	$scope.totalItems = $scope.data.items;
+	$scope.displayItems = $scope.totalItems.slice(0, ITEM_LIMIT);
+	$scope.pageChanged = function () {
+		var startPos = ($scope.page - 1) * ITEM_LIMIT;
+		//$scope.displayItems = $scope.totalItems.slice(startPos, startPos + 3);
+		console.log($scope.page + "---" + startPos);
+	};
+	$scope.selectedItem = false;
+	$scope.view = 'grid';
+	$scope.showItem = false;
+
+	/** Check if there are url parms */
+	// Category
+	if (c.data.urlCategory != '') {
+		var temp_category = getCategoryObject(c.data.urlCategory);
+		if (temp_category != '') {
+			$scope.selectedCategory = temp_category;
+			$scope.data.showTitle = false;
+			c.subcategories = temp_category.subcategories;
+			c.items = [];
+			$scope.totalItems = temp_category.items;
+			$scope.displayItems = $scope.totalItems.slice(0, ITEM_LIMIT);
+			if (!c.subcategories || c.subcategories.length == 0) {
+				c.noSub = true;
+			}
+			$scope.showItem = false;
+		}
+	}
+	// Subcategory
+	if (c.data.urlCategory != '' && c.data.urlSubcategory != '') {
+		var temp_subcategory = getSubcategoryObject(c.data.urlCategory, c.data.urlSubcategory);
+		if (temp_subcategory != '') {
+			$scope.selectedSubCategory = temp_subcategory;
+			c.childcategories = temp_subcategory.subcategories;
+			c.items = [];
+			//c.items = subcategory.items;
+			$scope.totalItems = temp_subcategory.items;
+			$scope.displayItems = $scope.totalItems.slice(0, ITEM_LIMIT);
+			$scope.showItem = false;
+			c.isMobile = false;
+		}
+	}
+	// Catalog Item
+	if (c.data.urlCategory != '' && c.data.urlCatItem != '') {
+		var temp_item = getCatItemObject(c.data.urlCategory, c.data.urlSubcategory, c.data.urlCatItem);
+		c.subcategories = [];
+		$scope.selectedItem = true;
+		var kbOptions = { sys_id: temp_item.sys_id.toString(), display_cart_on_right: 'false' };
+		if (temp_item.type == "order_guide") {
+			spUtil.get("bku-widget-sc-order-guide-v2", kbOptions).then(function (response) {
+				c.itemWidgets = [response];
+			});
+		}
+		else {
+			spUtil.get("bu-cat-item", kbOptions).then(function (response) {
+				c.itemWidgets = [response];
+			});
+		}
+
+		$scope.showItem = true;
+	}
+
+	$scope.selectCategory = function (category) {
+		$scope.selectedCategory = category;
+		$scope.selectedSubCategory = null;
+		$scope.selectedItemObj = null;
+		$scope.data.showTitle = false;
+		c.subcategories = category.subcategories;
+		c.items = [];
+		$scope.totalItems = category.items;
+		$scope.displayItems = $scope.totalItems.slice(0, ITEM_LIMIT);
+		if (!c.subcategories || c.subcategories.length == 0) {
+			c.noSub = true;
+		}
+		$scope.showItem = false;
+	};
+	$scope.selectSubCategory = function (subcategory) {
+		$scope.selectedSubCategory = subcategory;
+		$scope.selectedItemObj = null;
+		c.childcategories = subcategory.subcategories;
+		c.items = [];
+		//c.items = subcategory.items;
+		$scope.totalItems = subcategory.items;
+		$scope.displayItems = $scope.totalItems.slice(0, ITEM_LIMIT);
+		$scope.showItem = false;
+		c.isMobile = false;
+	};
+	$scope.selectChildCategory = function (childcat) {
+		$scope.selectedChildCategory = childcat;
+		c.items = [];
+		//c.items = childcat.items;
+		$scope.totalItems = childcat.items;
+		$scope.displayItems = $scope.totalItems.slice(0, ITEM_LIMIT);
+		$scope.showItem = false;
+		c.isMobile = false;
+		c.isChildMobile = true;
+	};
+	$scope.back = function () {
+		c.isChildMobile = false;
+		if ($scope.showItem == true)
+			$scope.showItem = false;
+		c.noSub = false;
+		c.childcategories = [];
+		c.subcategories = [];
+		c.isMobile = true;
+	};
+	$scope.reset = function () {
+		var tme = Math.floor(Date.now() / 1000);
+		$location.search("update", tme);
+	};
+	$scope.toggleCategories = function () {
+		c.isMobile = true;
+	};
+
+	$scope.changeView = function (view) {
+		$scope.view = view;
+	};
+
+	$scope.isTouchDevice = function () {
+		return ('ontouchstart' in $window);
+	};
+	$scope.selectItem = function (catItem) {
+		c.subcategories = [];
+		$scope.selectedItem = true;
+		$scope.selectedItemObj = catItem;
+		var kbOptions = { sys_id: catItem.sys_id.toString(), display_cart_on_right: 'false' };
+		if (catItem.sys_class_name == 'sc_cat_item_content') {
+			if (catItem.content_type == 'literal') {
+				spUtil.get("bu-cat-item", kbOptions).then(function (response) {
+					c.itemWidgets = [response];
+				});
+			}
+			else {
+				top.location.href = catItem.url;
+			}
+		}
+		else if (catItem.type == "order_guide") {
+			console.log(kbOptions)
+			spUtil.get("bku-widget-sc-order-guide-v2", kbOptions).then(function (response) {
+				c.itemWidgets = [response];
+			});
+		}
+		else {
+			spUtil.get("bu-cat-item", kbOptions).then(function (response) {
+				c.itemWidgets = [response];
+			});
+		}
+
+		$scope.showItem = true;
+	};
+
+	$scope.copyLinkToClipboard = function () {
+		var link_input = document.getElementById('cat-item-link');
+		var url_parms = '';
+		if ($scope.selectedCategory.sys_id) {
+			url_parms += '&cat=' + $scope.selectedCategory.sys_id;
+		}
+		if ($scope.selectedSubCategory && $scope.selectedSubCategory.sys_id) {
+			url_parms += '&subcat=' + $scope.selectedSubCategory.sys_id;
+		}
+		if ($scope.selectedItemObj && $scope.selectedItemObj.sys_id) {
+			url_parms += '&cat_item=' + $scope.selectedItemObj.sys_id;
+		}
+
+		link_input.value = $location.absUrl().replace($location.url(), '') + '/sp?id=bu_sc_home' + url_parms;
+		link_input.classList.remove('hidden');
+		link_input.select();
+		document.execCommand('copy');
+		link_input.classList.add('hidden');
+		spUtil.addInfoMessage('Copied to clipboard');
+	}
+
+	function getCategoryObject(sys_id) {
+		for (var i = 0; i < c.data.categoriesList.length; i++) {
+			if (c.data.categoriesList[i].sys_id == sys_id) {
+				return c.data.categoriesList[i];
+			}
+		}
+		return '';
+	}
+
+	function getSubcategoryObject(category_id, subcategory_id) {
+		var cat = getCategoryObject(category_id);
+		for (var i = 0; i < cat.subcategories.length; i++) {
+			if (cat.subcategories[i].sys_id == subcategory_id) {
+				return cat.subcategories[i];
+			}
+		}
+		return '';
+	}
+
+	function getCatItemObject(category_id, subcategory_id, item_id) {
+		var cat = getCategoryObject(category_id);
+		if (subcategory_id == '') {
+			for (var i = 0; i < cat.items.length; i++) {
+				if (cat.items[i].sys_id == item_id) {
+					return cat.items[i];
+				}
+			}
+		}
+		else {
+			var subcat = getSubcategoryObject(category_id, subcategory_id);
+			for (var j = 0; j < subcat.items.length; j++) {
+				if (subcat.items[j].sys_id == item_id) {
+					return subcat.items[j];
+				}
+			}
+		}
+		return '';
+	}
+}
+
+
+
+
+// Demo Data
+
+{"options":{"hide_xs":false}}
+
+
+
+// Options schema
+
+[{"name":"hide_xs","default_value":false,"section":"Behavior","label":"Hide at XS","type":"boolean"},{"name":"omit_badges","section":"Behavior","label":"Omit badges (may impact performance for large items in categories)","type":"boolean"},{"name":"check_can_view","default_value":"true","section":"Behavior","label":"Check canView per item","type":"boolean"},{"hint":"Choose between a flattened and a nested category structure (Nested may impact performance for large items in categories)","name":"category_layout","section":"Presentation","label":"Category Layout","type":"choice","choices":[{"label":"Flat","value":"Flat"},{"label":"Nested","value":"Nested"}]},{"displayValue":"Page","name":"page","section":"Data","label":"page","type":"reference","value":"sp_page","ed":{"reference":"sp_page"}},{"hint":"Number of categories to load on page load","name":"number_of_categories_to_load","section":"Data","default_value":"15","label":"Number of categories to load","type":"integer"},{"displayValue":"Category","name":"categories","display_value_list":[],"section":"other","label":"Categories","type":"glide_list","value":"sc_category","ed":{"reference":"sc_category"}}]
+
+
+
