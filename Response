@@ -1,0 +1,238 @@
+Yes — a few things in your widget code **immediately stand out as likely culprits after upgrading to Australia/Zurich**, especially given your symptom:
+
+> ✅ Left side (categories/subcategories) works  
+> ❌ Right side shows **static/random \~15 items**  
+> ❌ Clicking subcategory does **not refresh the item list**
+
+That pattern strongly points to a **data binding / server-side query issue**, not UI rendering.
+
+***
+
+# 🔍 What stands out in your code
+
+## 1. 🚨 `getItems()` is overwriting data globally
+
+Inside your server script:
+
+```js
+function getItems(catid) {
+  ...
+  var items = data.items = [];
+```
+
+👉 This is **very suspicious**
+
+### Why this breaks things (especially after upgrade)
+
+* You're assigning `data.items` **inside every call to `getItems()`**
+* But `getItems()` is called:
+  * once globally → `data.items = getItems();`
+  * again inside every category → `categoryDetails.items = getItems(categoryDetails.sys_id);`
+
+### Result:
+
+* `data.items` gets overwritten multiple times
+* You end up with **a single last-executed query result (often \~15 items)**
+
+✅ That matches your symptom exactly:
+
+> “random 15 catalog items always showing”
+
+***
+
+✅ ✅ **Fix**
+Change this:
+
+```js
+var items = data.items = [];
+```
+
+To:
+
+```js
+var items = [];
+```
+
+👉 Never mutate `data.items` inside `getItems()`.
+
+***
+
+## 2. ⚠️ CatalogSearch behavior likely changed (Zurich/Australia)
+
+You’re using:
+
+```js
+var scRecord = new sn_sc.CatalogSearch().search(catalog, catid, '', false, true);
+```
+
+### What changed in newer releases:
+
+* CatalogSearch became **more restrictive and optimized**
+* That last parameter (`true`) = **limit / paging behavior**
+* It often returns **limited default results (\~10–20)** unless explicitly handled
+
+👉 That explains:
+
+* Why you’re always seeing **\~15 items**
+* Why it feels “random”
+
+***
+
+✅ ✅ Recommended safer approach
+Instead of relying on CatalogSearch defaults:
+
+```js
+var scRecord = new sn_sc.CatalogSearch().search(catalog, catid, '', false);
+```
+
+Or explicitly control behavior (depending on your instance version).
+
+OR switch to GlideRecord-based retrieval if you need deterministic results.
+
+***
+
+## 3. ⚠️ Client script IS correct (important insight)
+
+Your client logic is actually fine:
+
+```js
+$scope.totalItems = subcategory.items;
+$scope.displayItems = $scope.totalItems.slice(0, ITEM_LIMIT);
+```
+
+👉 So the UI **is doing what it should**
+
+**Conclusion:**
+
+* Problem is NOT Angular
+* Problem is **server data coming in wrong**
+
+***
+
+## 4. ⚠️ ITEM\_LIMIT mismatch
+
+```js
+var ITEM_LIMIT = 9;
+```
+
+But you see:
+
+> \~15 items
+
+👉 That confirms:
+
+* The **server is returning limited data**, not client slicing
+
+***
+
+## 5. ⚠️ Nested category calls amplify the issue
+
+This line:
+
+```js
+categoryDetails.items = getItems(categoryDetails.sys_id);
+```
+
+👉 means `getItems()` runs **many times recursively**
+
+Combined with:
+
+```js
+data.items = []
+```
+
+👉 results are constantly overwritten → only last set survives
+
+***
+
+# 🧠 Root Cause Summary
+
+After Zurich/Australia upgrade, two things combined to break your widget:
+
+### ✅ Primary Issue
+
+**Global mutation inside `getItems()`**
+
+* `data.items` is being overwritten repeatedly
+
+### ✅ Secondary Issue
+
+**CatalogSearch behavior change**
+
+* Now returns limited/paged results (\~15 items)
+
+***
+
+# ✅ Recommended Fix (minimal + safe)
+
+### ✅ 1. Fix the overwrite bug
+
+```diff
+- var items = data.items = [];
++ var items = [];
+```
+
+***
+
+### ✅ 2. Control CatalogSearch results (if still needed)
+
+Try:
+
+```diff
+- search(catalog, catid, '', false, true);
++ search(catalog, catid, '', false);
+```
+
+***
+
+### ✅ 3. (Optional but better) Debug quickly
+
+Add:
+
+```js
+gs.info("Category: " + catid + " Items count: " + items.length);
+```
+
+👉 You’ll likely see:
+
+* each call returning small sets
+* last call “winning”
+
+***
+
+# 🚀 Why this broke ONLY after upgrade
+
+This is classic:
+
+* Old versions tolerated sloppy patterns like `data.items` reuse
+* New versions (Zurich/Australia):
+  * stricter API behavior
+  * optimized search (with limits)
+  * expose hidden coupling issues
+
+***
+
+# 🎯 What I would do next (fastest path)
+
+1. Fix `getItems()` overwrite ✅
+2. Test again
+3. If still limited:
+   * log item count
+   * adjust CatalogSearch params
+
+***
+
+# ⚡ If you want, I can go deeper
+
+I can:
+
+* Rewrite `getItems()` to be **Zurich-safe and deterministic**
+* Replace CatalogSearch completely with **GlideRecord-based retrieval**
+* Help you compare behavior between Yokohama vs Zurich APIs
+
+***
+
+### Quick question
+
+Are you using **multiple catalogs or just one (`sc_catalog`)**?  
+That affects how CatalogSearch behaves post-upgrade and may be contributing to the filtering issue.
