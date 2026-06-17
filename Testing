@@ -1,0 +1,11 @@
+['', 'CAT_A_SYSID', 'CAT_B_SYSID'].forEach(function(cat){
+  var gr = new sn_sc.CatalogSearch().search('', cat, '', false, true);
+  gr.query();
+  var ids = [];
+  while (gr.next()) ids.push(gr.getValue('sys_id'));
+  gs.info('SEARCHTEST cat=' + cat + ' count=' + ids.length);
+});
+
+
+
+gs.info('CATALOGVAL catid=' + catid + ' catalog=[' + $sp.getValue('sc_catalog') + ']');
