@@ -1,238 +1,47 @@
-Yes — a few things in your widget code **immediately stand out as likely culprits after upgrading to Australia/Zurich**, especially given your symptom:
+Here's a response you can send back. The short version: that AI and I agree on the *category* of problem (server-side data, not Angular; CatalogSearch behavior shifted after the upgrade), but its headline root cause is wrong, and one of its technical claims about the API is incorrect. Here's the detail, written so you can paste it directly.
 
-> ✅ Left side (categories/subcategories) works  
-> ❌ Right side shows **static/random \~15 items**  
-> ❌ Clicking subcategory does **not refresh the item list**
+---
 
-That pattern strongly points to a **data binding / server-side query issue**, not UI rendering.
+We're aligned on the important framing: the bug is in the **server-side data**, not the Angular client. The client logic (`$scope.totalItems = subcategory.items; …slice()`) is fine, and the real failure is that `getItems(catid)` returns the same set regardless of `catid`. We also agree the trigger is a **CatalogSearch behavior change** in the Zurich/Australia line. So far, same page.
 
-***
+But I disagree with the **primary root cause** — the claim that `var items = data.items = [];` causes a "global overwrite" that makes every category collapse to one shared ~15-item result. That diagnosis doesn't hold up under JavaScript reference semantics, and removing it won't fix anything.
 
-# 🔍 What stands out in your code
-
-## 1. 🚨 `getItems()` is overwriting data globally
-
-Inside your server script:
+Walk through what that line actually does on each call:
 
 ```js
-function getItems(catid) {
-  ...
-  var items = data.items = [];
+var items = data.items = [];   // allocates a BRAND NEW array, points both data.items and local `items` at it
+while (scRecord.next()) { items.push(item); }
+return items;                  // the caller captures THIS array reference
 ```
 
-👉 This is **very suspicious**
-
-### Why this breaks things (especially after upgrade)
-
-* You're assigning `data.items` **inside every call to `getItems()`**
-* But `getItems()` is called:
-  * once globally → `data.items = getItems();`
-  * again inside every category → `categoryDetails.items = getItems(categoryDetails.sys_id);`
-
-### Result:
-
-* `data.items` gets overwritten multiple times
-* You end up with **a single last-executed query result (often \~15 items)**
-
-✅ That matches your symptom exactly:
-
-> “random 15 catalog items always showing”
-
-***
-
-✅ ✅ **Fix**
-Change this:
-
-```js
-var items = data.items = [];
-```
-
-To:
-
-```js
-var items = [];
-```
-
-👉 Never mutate `data.items` inside `getItems()`.
-
-***
-
-## 2. ⚠️ CatalogSearch behavior likely changed (Zurich/Australia)
-
-You’re using:
-
-```js
-var scRecord = new sn_sc.CatalogSearch().search(catalog, catid, '', false, true);
-```
-
-### What changed in newer releases:
-
-* CatalogSearch became **more restrictive and optimized**
-* That last parameter (`true`) = **limit / paging behavior**
-* It often returns **limited default results (\~10–20)** unless explicitly handled
-
-👉 That explains:
-
-* Why you’re always seeing **\~15 items**
-* Why it feels “random”
-
-***
-
-✅ ✅ Recommended safer approach
-Instead of relying on CatalogSearch defaults:
-
-```js
-var scRecord = new sn_sc.CatalogSearch().search(catalog, catid, '', false);
-```
-
-Or explicitly control behavior (depending on your instance version).
-
-OR switch to GlideRecord-based retrieval if you need deterministic results.
-
-***
-
-## 3. ⚠️ Client script IS correct (important insight)
-
-Your client logic is actually fine:
-
-```js
-$scope.totalItems = subcategory.items;
-$scope.displayItems = $scope.totalItems.slice(0, ITEM_LIMIT);
-```
-
-👉 So the UI **is doing what it should**
-
-**Conclusion:**
-
-* Problem is NOT Angular
-* Problem is **server data coming in wrong**
-
-***
-
-## 4. ⚠️ ITEM\_LIMIT mismatch
-
-```js
-var ITEM_LIMIT = 9;
-```
-
-But you see:
-
-> \~15 items
-
-👉 That confirms:
-
-* The **server is returning limited data**, not client slicing
-
-***
-
-## 5. ⚠️ Nested category calls amplify the issue
-
-This line:
+Each call allocates a *fresh* `[]`. The caller stores the returned reference:
 
 ```js
 categoryDetails.items = getItems(categoryDetails.sys_id);
 ```
 
-👉 means `getItems()` runs **many times recursively**
+When the next category calls `getItems`, it does `data.items = []` again — but `[]` is a **new** array object. Reassigning the `data.items` property to a new array does **not** mutate the array that was already returned and stored on the previous category. So `categoryA.items` and `categoryB.items` point at two distinct, correctly-populated arrays. The only thing that "loses" is `data.items` itself, which ends up pointing at the last call's array — and that only affects the widget's *initial* state before any click, because after a click the client reads `category.items` / `subcategory.items`, never `data.items`.
 
-Combined with:
+For an aliasing bug to actually exist, the code would need to clear in place (`data.items.length = 0`) or reuse a shared array reference. `= []` always allocates new, so there's no shared-reference bug here. It's ugly and worth cleaning up, but it is not the cause, and changing it to `var items = [];` will leave the symptom exactly as-is.
 
-```js
-data.items = []
-```
+Two more corrections on the API specifics:
 
-👉 results are constantly overwritten → only last set survives
+The 5th parameter of `search(catalogID, categoryID, term, mobile, noDepthSearch)` is **`noDepthSearch`**, not "limit/paging." `true` = shallow (direct items only, no subcategories); `false` = deep. So the proposed fix of dropping it to `search(catalog, catid, '', false)` doesn't address category filtering at all — it flips shallow→deep, meaning each category would start pulling in all its descendants' items too. That changes behavior in a new direction rather than fixing it.
 
-***
+Also, the "ITEM_LIMIT=9 vs ~15" point: the template binds the repeat to `totalItems`, not the sliced `displayItems` — `ng-repeat="item in filterData = (totalItems)…"` — so the 9-item slice is vestigial and isn't what's rendering. The ~15 you see is simply the full count the (now-unfiltered) search returns per category.
 
-# 🧠 Root Cause Summary
+**What I actually think is broken:** the right pane is fed entirely by `new sn_sc.CatalogSearch().search(catalog, catid, '', false, true)`, and after the upgrade that call has **stopped honoring the `categoryID` argument** when the term is empty. Browsing-by-category with a blank term was always leaning on the API to fall back to a pure category filter, and that fallback regressed in the Zurich-era catalog-search rework. So `getItems(catid)` now returns the same catalog-wide capped set for every `catid` → every category and subcategory shows the identical ~15 → subcategory clicks swap in an array that's byte-for-byte the same, which reads as "nothing changed." The left-hand category/subcategory list still works because it comes from `getViewableSubCategories()`, a separate API that wasn't touched.
 
-After Zurich/Australia upgrade, two things combined to break your widget:
-
-### ✅ Primary Issue
-
-**Global mutation inside `getItems()`**
-
-* `data.items` is being overwritten repeatedly
-
-### ✅ Secondary Issue
-
-**CatalogSearch behavior change**
-
-* Now returns limited/paged results (\~15 items)
-
-***
-
-# ✅ Recommended Fix (minimal + safe)
-
-### ✅ 1. Fix the overwrite bug
-
-```diff
-- var items = data.items = [];
-+ var items = [];
-```
-
-***
-
-### ✅ 2. Control CatalogSearch results (if still needed)
-
-Try:
-
-```diff
-- search(catalog, catid, '', false, true);
-+ search(catalog, catid, '', false);
-```
-
-***
-
-### ✅ 3. (Optional but better) Debug quickly
-
-Add:
+**Prove which theory is right in one shot** — log the catid and the returned sys_ids per call:
 
 ```js
-gs.info("Category: " + catid + " Items count: " + items.length);
+gs.info('CATBROWSE catid=' + catid + ' count=' + scRecord.getRowCount());
 ```
 
-👉 You’ll likely see:
+If every category logs a *different* count/item set, then the search is fine and I'm wrong. If every category logs the *same* set regardless of catid, the category filter is being ignored — which also disproves the `data.items` theory, since under that theory each individual `getItems` call would still have queried and returned its own correct per-category set.
 
-* each call returning small sets
-* last call “winning”
+**The fix:** since this is a browse widget (term is always `''`), stop using CatalogSearch for it and filter by category explicitly — covering both the `category` home field and the `sc_cat_item_category` m2m table for multi-category items — while keeping the existing `canView()` / `isVisibleServicePortal()` gating so visibility/ACLs are unchanged.
 
-***
+---
 
-# 🚀 Why this broke ONLY after upgrade
-
-This is classic:
-
-* Old versions tolerated sloppy patterns like `data.items` reuse
-* New versions (Zurich/Australia):
-  * stricter API behavior
-  * optimized search (with limits)
-  * expose hidden coupling issues
-
-***
-
-# 🎯 What I would do next (fastest path)
-
-1. Fix `getItems()` overwrite ✅
-2. Test again
-3. If still limited:
-   * log item count
-   * adjust CatalogSearch params
-
-***
-
-# ⚡ If you want, I can go deeper
-
-I can:
-
-* Rewrite `getItems()` to be **Zurich-safe and deterministic**
-* Replace CatalogSearch completely with **GlideRecord-based retrieval**
-* Help you compare behavior between Yokohama vs Zurich APIs
-
-***
-
-### Quick question
-
-Are you using **multiple catalogs or just one (`sc_catalog`)**?  
-That affects how CatalogSearch behaves post-upgrade and may be contributing to the filtering issue.
+That's what I'd send. Want me to also include the full drop-in `getItems()` rewrite in what you send them, or hold it back and see whether they converge on the category-filter diagnosis first?
