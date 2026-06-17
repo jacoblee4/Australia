@@ -1,6 +1,72 @@
-var cat = '0e8d46f11b5d32904726c9d6624bcb9f'; // real category from your logs
-['', '7b0370019f22120047a2d126c42e7075'].forEach(function(catalog){
-  var gr = new sn_sc.CatalogSearch().search(catalog, cat, '', false, true);
-  gr.query();
-  gs.info('CATALOGTEST catalog=[' + catalog + '] count=' + gr.getRowCount());
-});
+function getItems(catid) {
+    var items = [];
+    if (!catid)
+        return items;
+
+    var ids = {};
+
+    // Home-category items
+    var gr = new GlideRecord('sc_cat_item');
+    gr.addActiveQuery();
+    gr.addQuery('category', catid);
+    gr.addQuery('sys_class_name', 'NOT IN', 'sc_cat_item_wizard');
+    gr.addEncodedQuery('hide_sp=false^ORhide_spISEMPTY');
+    gr.query();
+    while (gr.next())
+        ids[gr.getUniqueValue()] = true;
+
+    // Multi-category items (m2m)
+    var m2m = new GlideRecord('sc_cat_item_category');
+    m2m.addQuery('sc_category', catid);
+    m2m.query();
+    while (m2m.next())
+        ids[m2m.getValue('sc_cat_item')] = true;
+
+    for (var id in ids) {
+        var catalogItemJS = new sn_sc.CatItem(id);
+        if (!catalogItemJS.canView() || !catalogItemJS.isVisibleServicePortal())
+            continue;
+
+        var catItemDetails = catalogItemJS.getItemSummary();
+        var item = {};
+        item.name = catItemDetails.name;
+        item.short_description = catItemDetails.short_description;
+        item.picture = catItemDetails.picture;
+        item.price = catItemDetails.price;
+        item.sys_id = catItemDetails.sys_id;
+        item.hasPrice = catItemDetails.show_price;
+        item.page = 'bu_cat_item';
+        item.type = catItemDetails.type;
+        item.order = catItemDetails.order;
+        item.sys_class_name = catItemDetails.sys_class_name;
+
+        if (item.type == 'order_guide') {
+            item.page = 'sc_cat_item_guide';
+        } else if (item.sys_class_name == 'sc_cat_item_content') {
+            var contentItem = new GlideRecord('sc_cat_item_content');
+            contentItem.get(item.sys_id.toString());
+            item.content_type = contentItem.content_type.toString();
+            item.url = contentItem.url.toString();
+            if (contentItem.content_type == 'kb') {
+                item.kb_article = catItemDetails.kb_article.toString();
+                item.page = 'bu_kb_article';
+                item.sys_id = item.kb_article.toString();
+            } else if (contentItem.content_type == 'external') {
+                item.target = '_blank';
+            } else if (contentItem.content_type == 'literal') {
+                item.content_type = 'literal';
+            }
+        }
+        items.push(item);
+    }
+
+    // Sort by order, then name (replaces the orderBy from CatalogSearch)
+    items.sort(function(a, b) {
+        var ao = parseInt(a.order, 10) || 0;
+        var bo = parseInt(b.order, 10) || 0;
+        if (ao !== bo) return ao - bo;
+        return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+    });
+
+    return items;
+}
